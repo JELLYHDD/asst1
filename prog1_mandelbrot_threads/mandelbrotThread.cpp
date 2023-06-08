@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <thread>
-
+#include<vector>
 #include "CycleTimer.h"
+
 
 typedef struct {
     float x0, x1;
@@ -28,14 +29,22 @@ extern void mandelbrotSerial(
 //
 // Thread entrypoint.
 void workerThreadStart(WorkerArgs * const args) {
-
-    // TODO FOR CS149 STUDENTS: Implement the body of the worker
-    // thread here. Each thread should make a call to mandelbrotSerial()
-    // to compute a part of the output image.  For example, in a
-    // program that uses two threads, thread 0 could compute the top
-    // half of the image and thread 1 could compute the bottom half.
-
-    printf("Hello world from thread %d\n", args->threadId);
+    
+    double startTime = CycleTimer::currentSeconds();
+    //划分图像
+    
+    //version1
+    // int h=args->height/args->numThreads;
+    // int start=args->threadId*(int)h;
+    // if(h*args->numThreads!=(int)args->height&&args->threadId==args->numThreads-1){h=args->height-h*args->threadId;}
+    // mandelbrotSerial(args->x0,args->y0,args->x1,args->y1,args->width,args->height,start,h,args->maxIterations,args->output);
+    
+    //version2
+    for (int i = args->threadId; i<(int)args->height; i+=args->numThreads){
+        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, i, 1,args->maxIterations, args->output);
+    }
+    double endTime = CycleTimer::currentSeconds();
+    printf("thread%d:time=%lf\n",args->threadId,(endTime-startTime)*1000);
 }
 
 //
@@ -61,6 +70,7 @@ void mandelbrotThread(
     std::thread workers[MAX_THREADS];
     WorkerArgs args[MAX_THREADS];
 
+
     for (int i=0; i<numThreads; i++) {
       
         // TODO FOR CS149 STUDENTS: You may or may not wish to modify
@@ -83,6 +93,7 @@ void mandelbrotThread(
     // are created and the main application thread is used as a worker
     // as well.
     for (int i=1; i<numThreads; i++) {
+
         workers[i] = std::thread(workerThreadStart, &args[i]);
     }
     
